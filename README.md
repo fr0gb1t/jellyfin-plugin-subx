@@ -51,3 +51,17 @@ En Jellyfin > Plugins > Subdivx:
 - El acceso directo a Subdivx depende de cookies válidas y puede romperse por cambios de Cloudflare o del frontend del sitio.
 - El modo bridge suele ser más robusto para uso continuo.
 - Cuando saques una nueva versión, actualizá `version`, `sourceUrl` y `timestamp` en el manifest antes de crear el tag.
+
+## Probe externo
+
+Para probar la búsqueda fuera de Jellyfin:
+
+```bash
+python3 tools/subdivx_probe.py \
+  --query "Made in Abyss" \
+  --cf-clearance "TU_CF_CLEARANCE" \
+  --sdx "TU_SDX" \
+  --user-agent "Mozilla/5.0 (X11; Linux x86_64; rv:148.0) Gecko/20100101 Firefox/148.0"
+```
+
+También puedes usar `--cookie-header` en lugar de `--cf-clearance` y `--sdx`.
