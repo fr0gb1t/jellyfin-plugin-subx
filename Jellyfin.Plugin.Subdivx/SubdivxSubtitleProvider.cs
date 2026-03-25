@@ -29,18 +29,52 @@ public sealed class SubdivxSubtitleProvider : ISubtitleProvider
         var config = Plugin.Instance?.Configuration ?? new PluginConfiguration();
         var client = new SubdivxClient(_httpClientFactory.CreateClient(nameof(SubdivxSubtitleProvider)), _logger);
 
+        if (config.EnableDebugLogging)
+        {
+            _logger.LogInformation(
+                "Subdivx provider search started. Name='{Name}', Series='{Series}', Year={Year}, Season={Season}, Episode={Episode}, Language='{Language}', TwoLetter='{TwoLetter}', MediaPath='{MediaPath}'",
+                request.Name,
+                request.SeriesName,
+                request.ProductionYear,
+                request.ParentIndexNumber,
+                request.IndexNumber,
+                request.Language,
+                request.TwoLetterISOLanguageName,
+                request.MediaPath);
+        }
+
         try
         {
+            IReadOnlyList<RemoteSubtitleInfo> results;
             if (config.UseBridge)
             {
-                return await client.SearchBridgeAsync(config, request, cancellationToken).ConfigureAwait(false);
+                results = await client.SearchBridgeAsync(config, request, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                results = await client.SearchDirectAsync(config, request, cancellationToken).ConfigureAwait(false);
             }
 
-            return await client.SearchDirectAsync(config, request, cancellationToken).ConfigureAwait(false);
+            if (config.EnableDebugLogging)
+            {
+                _logger.LogInformation("Subdivx provider search finished with {Count} result(s).", results.Count);
+            }
+
+            return results;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Subdivx search failed.");
+            _logger.LogWarning(
+                ex,
+                "Subdivx search failed. Name='{Name}', Series='{Series}', Year={Year}, Season={Season}, Episode={Episode}, Language='{Language}', TwoLetter='{TwoLetter}', MediaPath='{MediaPath}'",
+                request.Name,
+                request.SeriesName,
+                request.ProductionYear,
+                request.ParentIndexNumber,
+                request.IndexNumber,
+                request.Language,
+                request.TwoLetterISOLanguageName,
+                request.MediaPath);
             return Array.Empty<RemoteSubtitleInfo>();
         }
     }

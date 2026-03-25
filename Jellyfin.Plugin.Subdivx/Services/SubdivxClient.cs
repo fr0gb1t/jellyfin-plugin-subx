@@ -80,7 +80,17 @@ public sealed class SubdivxClient
 
         if (items is null || items.Count == 0 || string.IsNullOrWhiteSpace(selectedQuery))
         {
+            if (config.EnableDebugLogging)
+            {
+                _logger.LogInformation("Subdivx direct search produced no results for any query candidate.");
+            }
+
             return Array.Empty<RemoteSubtitleInfo>();
+        }
+
+        if (config.EnableDebugLogging)
+        {
+            _logger.LogInformation("Subdivx direct search selected query '{Query}' for ranking.", selectedQuery);
         }
 
         var ranked = items
