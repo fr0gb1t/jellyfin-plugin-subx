@@ -30,7 +30,32 @@ jobs:
           cp -R artifacts/publish/* artifacts/package/Jellyfin.Plugin.Subdivx/
           cd artifacts/package
           zip -r ../../Jellyfin.Plugin.Subdivx-${GITHUB_REF_NAME}.zip Jellyfin.Plugin.Subdivx
+      - name: Generate repository manifest
+        run: |
+          mkdir -p artifacts/repository
+          CHECKSUM=$(md5sum Jellyfin.Plugin.Subdivx-${GITHUB_REF_NAME}.zip | awk '{print toupper($1)}')
+          export CHECKSUM
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          template = Path("manifest.template.json")
+          output = Path("artifacts/repository/manifest.json")
+
+          data = json.loads(template.read_text(encoding="utf-8"))
+          data[0]["versions"][0]["checksum"] = os.environ["CHECKSUM"]
+          output.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          PY
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:
-          files: Jellyfin.Plugin.Subdivx-${{ github.ref_name }}.zip
+          files: |
+            Jellyfin.Plugin.Subdivx-${{ github.ref_name }}.zip
+            artifacts/repository/manifest.json
+      - name: Publish manifest to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: artifacts/repository

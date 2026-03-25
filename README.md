@@ -43,14 +43,16 @@ En Jellyfin > Plugins > Subdivx:
 2. Ajustá `manifest.json` y `manifest.template.json` si cambias usuario, repo o versión.
 3. Creá un tag, por ejemplo `v0.1.0.11`.
 4. GitHub Actions va a compilar y adjuntar `Jellyfin.Plugin.Subdivx-v0.1.0.11.zip` al release.
-5. Publicá `manifest.json` en GitHub Pages, un gist raw o cualquier URL estática.
-6. En Jellyfin agregá esa URL en **Dashboard > Plugins > Repositories**.
+5. Configurá GitHub Pages para servir desde la rama `gh-pages` y carpeta `/ (root)`.
+6. El workflow publica automáticamente un `manifest.json` final con checksum correcto en `gh-pages`.
+7. En Jellyfin agregá esa URL en **Dashboard > Plugins > Repositories**.
 
 ## Notas importantes
 
 - El acceso directo a Subdivx depende de cookies válidas y puede romperse por cambios de Cloudflare o del frontend del sitio.
 - El modo bridge suele ser más robusto para uso continuo.
-- Cuando saques una nueva versión, actualizá `version`, `sourceUrl` y `timestamp` en el manifest antes de crear el tag.
+- Cuando saques una nueva versión, actualizá `version`, `sourceUrl` y `timestamp` en `manifest.template.json` antes de crear el tag.
+- El `checksum` ya no hace falta cargarlo a mano: lo calcula el workflow y publica el manifest final a `gh-pages`.
 
 ## Probe externo
 
