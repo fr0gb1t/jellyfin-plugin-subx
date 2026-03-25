@@ -8,9 +8,9 @@
     "overview": "Adds a Subdivx subtitle provider to Jellyfin.",
     "versions": [
       {
-        "version": "0.1.0.8",
+        "version": "0.1.0.9",
         "targetAbi": "10.11.3.0",
-        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subdivx/releases/download/v0.1.0.8/Jellyfin.Plugin.Subdivx-v0.1.0.8.zip",
+        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subdivx/releases/download/v0.1.0.9/Jellyfin.Plugin.Subdivx-v0.1.0.9.zip",
         "timestamp": "2026-03-25 00:00:00",
         "changelog": "Register Subdivx subtitle provider in Jellyfin DI"
       }
