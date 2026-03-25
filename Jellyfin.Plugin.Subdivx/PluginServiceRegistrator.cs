@@ -1,3 +1,4 @@
+using MediaBrowser.Controller;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Subtitles;
 using Microsoft.Extensions.DependencyInjection;
