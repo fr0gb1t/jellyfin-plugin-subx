@@ -12,7 +12,7 @@ Este repositorio incluye:
 - manifiesto de repositorio (`manifest.json`)
 - workflow de GitHub Actions para compilar y adjuntar el ZIP a un release
 
-No pude compilar el binario en este entorno porque no hay SDK de .NET instalado. El workflow de GitHub Actions quedó alineado con .NET 8 para Jellyfin 10.11.x.
+No pude compilar el binario en este entorno porque no hay SDK de .NET instalado. El workflow de GitHub Actions quedó alineado con .NET 9, que es lo que requieren los paquetes Jellyfin 10.11.3 usados por este proyecto.
 
 ## Funcionalidad implementada
 
