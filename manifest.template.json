@@ -11,6 +11,7 @@
         "version": "0.1.0.4",
         "targetAbi": "10.11.3.0",
         "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subdivx/releases/download/v0.1.0.4/Jellyfin.Plugin.Subdivx-v0.1.0.4.zip",
+        "checksum": "ABD68C92D85E40EAADA77E1C89990CF1",
         "timestamp": "2026-03-25 00:00:00",
         "changelog": "Improve subtitle search fallback queries"
       }
