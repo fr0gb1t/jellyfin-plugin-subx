@@ -1,0 +1,30 @@
+name: Build plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Restore
+        run: dotnet restore Jellyfin.Plugin.Subdivx.sln
+      - name: Publish
+        run: dotnet publish Jellyfin.Plugin.Subdivx/Jellyfin.Plugin.Subdivx.csproj -c Release -o artifacts/publish
+      - name: Package
+        run: |
+          mkdir -p artifacts/package/Jellyfin.Plugin.Subdivx
+          cp -R artifacts/publish/* artifacts/package/Jellyfin.Plugin.Subdivx/
+          cd artifacts/package
+          zip -r ../../Jellyfin.Plugin.Subdivx-${{ github.ref_name }}.zip Jellyfin.Plugin.Subdivx
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Jellyfin.Plugin.Subdivx-${{ github.ref_name }}.zip

@@ -1,0 +1,64 @@
+<div id="SubdivxConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
+  <div data-role="content">
+    <div class="content-primary">
+      <form id="SubdivxConfigForm">
+        <div class="verticalSection verticalSection-extrabottompadding">
+          <div class="sectionTitleContainer flex align-items-center">
+            <h2 class="sectionTitle">Subdivx</h2>
+          </div>
+
+          <div class="checkboxContainer">
+            <label><input type="checkbox" id="UseBridge" /> Use bridge HTTP</label>
+          </div>
+
+          <div class="inputContainer">
+            <label class="inputLabel inputLabelUnfocused" for="BridgeBaseUrl">Bridge base URL</label>
+            <input id="BridgeBaseUrl" type="text" />
+          </div>
+
+          <div class="inputContainer">
+            <label class="inputLabel inputLabelUnfocused" for="BridgeApiKey">Bridge API key</label>
+            <input id="BridgeApiKey" type="text" />
+          </div>
+
+          <div class="inputContainer">
+            <label class="inputLabel inputLabelUnfocused" for="CookieHeader">Cookie header</label>
+            <textarea id="CookieHeader" rows="4"></textarea>
+            <div class="fieldDescription">Opcional. Si lo completás, tiene prioridad sobre cf_clearance + sdx.</div>
+          </div>
+
+          <div class="inputContainer">
+            <label class="inputLabel inputLabelUnfocused" for="CfClearance">cf_clearance</label>
+            <textarea id="CfClearance" rows="3"></textarea>
+          </div>
+
+          <div class="inputContainer">
+            <label class="inputLabel inputLabelUnfocused" for="SdxCookie">sdx</label>
+            <input id="SdxCookie" type="text" />
+          </div>
+
+          <div class="inputContainer">
+            <label class="inputLabel inputLabelUnfocused" for="UserAgent">User-Agent</label>
+            <input id="UserAgent" type="text" />
+          </div>
+
+          <div class="checkboxContainer">
+            <label><input type="checkbox" id="OnlySpanish" /> Only return Spanish subtitles</label>
+          </div>
+
+          <div class="checkboxContainer">
+            <label><input type="checkbox" id="EnableDebugLogging" /> Enable debug logging</label>
+          </div>
+
+          <div>
+            <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+              <span>Save</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="Subdivx.js"></script>
+</div>
