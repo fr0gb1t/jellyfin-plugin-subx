@@ -31,11 +31,6 @@ public sealed class SubdivxClient
 
     public async Task<IReadOnlyList<RemoteSubtitleInfo>> SearchDirectAsync(PluginConfiguration config, SubtitleSearchRequest request, CancellationToken cancellationToken)
     {
-        if (config.OnlySpanish && !IsSpanishRequest(request))
-        {
-            return Array.Empty<RemoteSubtitleInfo>();
-        }
-
         ConfigureDefaultHeaders(config);
 
         var versionSuffix = await GetVersionSuffixAsync(cancellationToken).ConfigureAwait(false);
@@ -310,25 +305,6 @@ public sealed class SubdivxClient
     private static string NormalizeQuery(string query)
     {
         return Regex.Replace(query, @"\s+", " ").Trim();
-    }
-
-    private static bool IsSpanishRequest(SubtitleSearchRequest request)
-    {
-        var lang3 = request.Language?.Trim() ?? string.Empty;
-        var lang2 = request.TwoLetterISOLanguageName?.Trim() ?? string.Empty;
-
-        if (string.IsNullOrWhiteSpace(lang3) && string.IsNullOrWhiteSpace(lang2))
-        {
-            return true;
-        }
-
-        return lang3.Equals("spa", StringComparison.OrdinalIgnoreCase)
-            || lang3.StartsWith("spa", StringComparison.OrdinalIgnoreCase)
-            || lang3.StartsWith("es", StringComparison.OrdinalIgnoreCase)
-            || lang3.Contains("spanish", StringComparison.OrdinalIgnoreCase)
-            || lang3.Contains("espan", StringComparison.OrdinalIgnoreCase)
-            || lang2.Equals("es", StringComparison.OrdinalIgnoreCase)
-            || lang2.StartsWith("es", StringComparison.OrdinalIgnoreCase);
     }
 
     private static int ScoreItem(SubdivxItem item, SubtitleSearchRequest request, string query)
