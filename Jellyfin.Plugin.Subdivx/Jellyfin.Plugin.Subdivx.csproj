@@ -4,6 +4,7 @@
     <AssemblyName>Jellyfin.Plugin.Subdivx</AssemblyName>
     <RootNamespace>Jellyfin.Plugin.Subdivx</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <Version>0.1.0.0</Version>
     <Authors>Federico Blaiotta</Authors>
     <Description>Subdivx subtitle provider plugin for Jellyfin.</Description>
