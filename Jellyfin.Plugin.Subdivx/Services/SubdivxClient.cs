@@ -41,37 +41,50 @@ public sealed class SubdivxClient
         var versionSuffix = await GetVersionSuffixAsync(cancellationToken).ConfigureAwait(false);
         var token = await GetTokenAsync(cancellationToken).ConfigureAwait(false);
         var searchField = $"buscar{versionSuffix}";
-        var query = BuildQuery(request);
-
-        if (string.IsNullOrWhiteSpace(query))
+        var queries = BuildQueries(request);
+        if (queries.Count == 0)
         {
             return Array.Empty<RemoteSubtitleInfo>();
         }
 
-        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        List<SubdivxItem>? items = null;
+        string? selectedQuery = null;
+        foreach (var query in queries)
         {
-            ["tabla"] = "resultados",
-            ["filtros"] = string.Empty,
-            [searchField] = query,
-            ["token"] = token
-        });
+            using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["tabla"] = "resultados",
+                ["filtros"] = string.Empty,
+                [searchField] = query,
+                ["token"] = token
+            });
 
-        using var response = await _httpClient.PostAsync("https://subdivx.com/inc/ajax.php", content, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        var payload = await JsonSerializer.DeserializeAsync<SubdivxSearchResponse>(stream, _jsonOptions, cancellationToken).ConfigureAwait(false);
-        if (payload?.Items is null || payload.Items.Count == 0)
+            using var response = await _httpClient.PostAsync("https://subdivx.com/inc/ajax.php", content, cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            var payload = await JsonSerializer.DeserializeAsync<SubdivxSearchResponse>(stream, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            var count = payload?.Items?.Count ?? 0;
+
+            if (config.EnableDebugLogging)
+            {
+                _logger.LogInformation("Subdivx direct search '{Query}' returned {Count} results.", query, count);
+            }
+
+            if (count > 0)
+            {
+                items = payload!.Items;
+                selectedQuery = query;
+                break;
+            }
+        }
+
+        if (items is null || items.Count == 0 || string.IsNullOrWhiteSpace(selectedQuery))
         {
             return Array.Empty<RemoteSubtitleInfo>();
         }
 
-        if (config.EnableDebugLogging)
-        {
-            _logger.LogInformation("Subdivx direct search '{Query}' returned {Count} results.", query, payload.Items.Count);
-        }
-
-        var ranked = payload.Items
-            .Select(item => new { Item = item, Score = ScoreItem(item, request, query) })
+        var ranked = items
+            .Select(item => new { Item = item, Score = ScoreItem(item, request, selectedQuery) })
             .OrderByDescending(x => x.Score)
             .ThenByDescending(x => x.Item.DownloadCount)
             .Take(20)
@@ -239,32 +252,54 @@ public sealed class SubdivxClient
         return token.Token;
     }
 
-    private static string BuildQuery(SubtitleSearchRequest request)
+    private static List<string> BuildQueries(SubtitleSearchRequest request)
     {
-        if (!string.IsNullOrWhiteSpace(request.MediaPath))
-        {
-            var fileName = Path.GetFileNameWithoutExtension(request.MediaPath);
-            if (!string.IsNullOrWhiteSpace(fileName))
-            {
-                return fileName;
-            }
-        }
+        var queries = new List<string>();
 
         if (IsEpisodeRequest(request))
         {
             var seriesName = request.SeriesName ?? request.Name ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(seriesName) && request.ParentIndexNumber.HasValue && request.IndexNumber.HasValue)
             {
-                return $"{seriesName} S{request.ParentIndexNumber.Value:00}E{request.IndexNumber.Value:00}";
+                queries.Add($"{seriesName} S{request.ParentIndexNumber.Value:00}E{request.IndexNumber.Value:00}");
+                queries.Add($"{seriesName} {request.ParentIndexNumber.Value}x{request.IndexNumber.Value:00}");
             }
         }
 
         if (!string.IsNullOrWhiteSpace(request.Name) && request.ProductionYear.HasValue)
         {
-            return $"{request.Name} {request.ProductionYear.Value}";
+            queries.Add($"{request.Name} {request.ProductionYear.Value}");
         }
 
-        return request.Name ?? request.SeriesName ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(request.Name))
+        {
+            queries.Add(request.Name);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SeriesName))
+        {
+            queries.Add(request.SeriesName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.MediaPath))
+        {
+            var fileName = Path.GetFileNameWithoutExtension(request.MediaPath);
+            if (!string.IsNullOrWhiteSpace(fileName))
+            {
+                queries.Add(fileName);
+            }
+        }
+
+        return queries
+            .Select(NormalizeQuery)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string NormalizeQuery(string query)
+    {
+        return Regex.Replace(query, @"\s+", " ").Trim();
     }
 
     private static bool IsSpanishRequest(SubtitleSearchRequest request)
