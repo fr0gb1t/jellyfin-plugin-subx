@@ -41,8 +41,8 @@ En Jellyfin > Plugins > Subdivx:
 
 1. Subí este repo a GitHub.
 2. Ajustá `manifest.json` y `manifest.template.json` si cambias usuario, repo o versión.
-3. Creá un tag, por ejemplo `v0.1.0.10`.
-4. GitHub Actions va a compilar y adjuntar `Jellyfin.Plugin.Subdivx-v0.1.0.10.zip` al release.
+3. Creá un tag, por ejemplo `v0.1.0.11`.
+4. GitHub Actions va a compilar y adjuntar `Jellyfin.Plugin.Subdivx-v0.1.0.11.zip` al release.
 5. Publicá `manifest.json` en GitHub Pages, un gist raw o cualquier URL estática.
 6. En Jellyfin agregá esa URL en **Dashboard > Plugins > Repositories**.
 
