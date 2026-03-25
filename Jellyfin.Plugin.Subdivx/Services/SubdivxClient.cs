@@ -314,11 +314,21 @@ public sealed class SubdivxClient
 
     private static bool IsSpanishRequest(SubtitleSearchRequest request)
     {
-        var lang3 = request.Language ?? string.Empty;
-        var lang2 = request.TwoLetterISOLanguageName ?? string.Empty;
+        var lang3 = request.Language?.Trim() ?? string.Empty;
+        var lang2 = request.TwoLetterISOLanguageName?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(lang3) && string.IsNullOrWhiteSpace(lang2))
+        {
+            return true;
+        }
+
         return lang3.Equals("spa", StringComparison.OrdinalIgnoreCase)
+            || lang3.StartsWith("spa", StringComparison.OrdinalIgnoreCase)
+            || lang3.StartsWith("es", StringComparison.OrdinalIgnoreCase)
+            || lang3.Contains("spanish", StringComparison.OrdinalIgnoreCase)
+            || lang3.Contains("espan", StringComparison.OrdinalIgnoreCase)
             || lang2.Equals("es", StringComparison.OrdinalIgnoreCase)
-            || string.IsNullOrWhiteSpace(lang3);
+            || lang2.StartsWith("es", StringComparison.OrdinalIgnoreCase);
     }
 
     private static int ScoreItem(SubdivxItem item, SubtitleSearchRequest request, string query)
