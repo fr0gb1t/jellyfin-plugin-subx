@@ -8,12 +8,11 @@
     "overview": "Adds a Subdivx subtitle provider to Jellyfin.",
     "versions": [
       {
-        "version": "0.1.0.6",
+        "version": "0.1.0.7",
         "targetAbi": "10.11.3.0",
-        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subdivx/releases/download/v0.1.0.6/Jellyfin.Plugin.Subdivx-v0.1.0.6.zip",
-        "checksum": "AB9E83E6E60486BD11792E2CE71A02BB",
+        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subdivx/releases/download/v0.1.0.7/Jellyfin.Plugin.Subdivx-v0.1.0.7.zip",
         "timestamp": "2026-03-25 00:00:00",
-        "changelog": "Fix Spanish language matching for Jellyfin subtitle searches"
+        "changelog": "Remove language filtering from subtitle searches"
       }
     ]
   }
