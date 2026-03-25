@@ -1,4 +1,3 @@
-using System.Text;
 using Jellyfin.Plugin.Subdivx.Configuration;
 using Jellyfin.Plugin.Subdivx.Services;
 using MediaBrowser.Controller.Providers;

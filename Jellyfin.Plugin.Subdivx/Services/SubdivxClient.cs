@@ -10,7 +10,6 @@ using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 using SharpCompress.Archives;
-using SharpCompress.Common;
 
 namespace Jellyfin.Plugin.Subdivx.Services;
 
@@ -66,6 +65,11 @@ public sealed class SubdivxClient
             return Array.Empty<RemoteSubtitleInfo>();
         }
 
+        if (config.EnableDebugLogging)
+        {
+            _logger.LogInformation("Subdivx direct search '{Query}' returned {Count} results.", query, payload.Items.Count);
+        }
+
         var ranked = payload.Items
             .Select(item => new { Item = item, Score = ScoreItem(item, request, query) })
             .OrderByDescending(x => x.Score)
@@ -88,7 +92,7 @@ public sealed class SubdivxClient
         var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
         var mediaType = response.Content.Headers.ContentType?.MediaType;
         var fileName = response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName;
-        return await ExtractSubtitleAsync(bytes, mediaType, fileName, cancellationToken).ConfigureAwait(false);
+        return await ExtractSubtitleAsync(bytes, mediaType, fileName).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<RemoteSubtitleInfo>> SearchBridgeAsync(PluginConfiguration config, SubtitleSearchRequest request, CancellationToken cancellationToken)
@@ -139,7 +143,7 @@ public sealed class SubdivxClient
             ProviderName = "Subdivx",
             ThreeLetterISOLanguageName = "spa",
             Format = string.IsNullOrWhiteSpace(x.Format) ? "srt" : x.Format,
-            DateCreated = DateTimeOffset.UtcNow
+            DateCreated = DateTime.UtcNow
         }).ToList();
     }
 
@@ -150,7 +154,7 @@ public sealed class SubdivxClient
             throw new InvalidOperationException("BridgeBaseUrl is empty.");
         }
 
-        var bridgeId = providerId.Substring("bridge|".Length, StringComparison.Ordinal);
+        var bridgeId = providerId["bridge|".Length..];
         var endpoint = config.BridgeBaseUrl.TrimEnd('/') + "/download/" + Uri.EscapeDataString(bridgeId);
         using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
         if (!string.IsNullOrWhiteSpace(config.BridgeApiKey))
@@ -161,7 +165,8 @@ public sealed class SubdivxClient
         using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-        return await ExtractSubtitleAsync(bytes, response.Content.Headers.ContentType?.MediaType, response.Content.Headers.ContentDisposition?.FileNameStar, cancellationToken).ConfigureAwait(false);
+        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName;
+        return await ExtractSubtitleAsync(bytes, response.Content.Headers.ContentType?.MediaType, fileName).ConfigureAwait(false);
     }
 
     private void ConfigureDefaultHeaders(PluginConfiguration config)
@@ -213,7 +218,13 @@ public sealed class SubdivxClient
             throw new InvalidOperationException("Unable to determine current Subdivx frontend version.");
         }
 
-        return match.Groups[1].Value.Replace(".", string.Empty, StringComparison.Ordinal);
+        var version = match.Groups[1].Value.Replace(".", string.Empty);
+        if (!string.IsNullOrWhiteSpace(version))
+        {
+            return version;
+        }
+
+        throw new InvalidOperationException("Subdivx frontend version was empty.");
     }
 
     private async Task<string> GetTokenAsync(CancellationToken cancellationToken)
@@ -239,7 +250,7 @@ public sealed class SubdivxClient
             }
         }
 
-        if (request.ContentType == MediaBrowser.Model.Entities.VideoContentType.Episode)
+        if (IsEpisodeRequest(request))
         {
             var seriesName = request.SeriesName ?? request.Name ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(seriesName) && request.ParentIndexNumber.HasValue && request.IndexNumber.HasValue)
@@ -277,7 +288,7 @@ public sealed class SubdivxClient
             }
         }
 
-        if (request.ContentType == MediaBrowser.Model.Entities.VideoContentType.Episode && request.ParentIndexNumber.HasValue && request.IndexNumber.HasValue)
+        if (IsEpisodeRequest(request) && request.ParentIndexNumber.HasValue && request.IndexNumber.HasValue)
         {
             var episodeTag = $"s{request.ParentIndexNumber.Value:00}e{request.IndexNumber.Value:00}";
             if (haystack.Contains(episodeTag, StringComparison.OrdinalIgnoreCase))
@@ -313,8 +324,15 @@ public sealed class SubdivxClient
             ProviderName = "Subdivx",
             ThreeLetterISOLanguageName = "spa",
             Format = format,
-            DateCreated = uploaded
+            DateCreated = uploaded.UtcDateTime
         };
+    }
+
+    private static bool IsEpisodeRequest(SubtitleSearchRequest request)
+    {
+        return request.ParentIndexNumber.HasValue
+            && request.IndexNumber.HasValue
+            && (!string.IsNullOrWhiteSpace(request.SeriesName) || !string.IsNullOrWhiteSpace(request.Name));
     }
 
     private static string StripHtml(string? value)
@@ -338,7 +356,7 @@ public sealed class SubdivxClient
         return id;
     }
 
-    private static async Task<SubtitlePayload> ExtractSubtitleAsync(byte[] bytes, string? mediaType, string? fileName, CancellationToken cancellationToken)
+    private static async Task<SubtitlePayload> ExtractSubtitleAsync(byte[] bytes, string? mediaType, string? fileName)
     {
         var normalizedName = (fileName ?? string.Empty).Trim('"');
         var extension = Path.GetExtension(normalizedName).ToLowerInvariant();
@@ -352,7 +370,7 @@ public sealed class SubdivxClient
             return ExtractFromZip(bytes);
         }
 
-        return await ExtractFromArchiveAsync(bytes, cancellationToken).ConfigureAwait(false);
+        return await ExtractFromArchiveAsync(bytes).ConfigureAwait(false);
     }
 
     private static SubtitlePayload ExtractFromZip(byte[] bytes)
@@ -377,13 +395,13 @@ public sealed class SubdivxClient
         return new SubtitlePayload(Path.GetExtension(entry.FullName).TrimStart('.'), output);
     }
 
-    private static Task<SubtitlePayload> ExtractFromArchiveAsync(byte[] bytes, CancellationToken cancellationToken)
+    private static Task<SubtitlePayload> ExtractFromArchiveAsync(byte[] bytes)
     {
         using var memory = new MemoryStream(bytes);
         using var archive = ArchiveFactory.Open(memory);
         var candidate = archive.Entries
-            .Where(x => !x.IsDirectory && SubtitleExtensions.Contains(Path.GetExtension(x.Key).ToLowerInvariant()))
-            .OrderBy(x => SubtitleExtensions.ToList().IndexOf(Path.GetExtension(x.Key).ToLowerInvariant()))
+            .Where(x => !x.IsDirectory && !string.IsNullOrWhiteSpace(x.Key) && SubtitleExtensions.Contains(Path.GetExtension(x.Key).ToLowerInvariant()))
+            .OrderBy(x => SubtitleExtensions.ToList().IndexOf(Path.GetExtension(x.Key!).ToLowerInvariant()))
             .ThenByDescending(x => x.Size)
             .FirstOrDefault();
 
@@ -393,9 +411,10 @@ public sealed class SubdivxClient
         }
 
         var output = new MemoryStream();
-        candidate.WriteTo(output, new ExtractionOptions { ExtractFullPath = false, Overwrite = true });
+        using var entryStream = candidate.OpenEntryStream();
+        entryStream.CopyTo(output);
         output.Position = 0;
-        return Task.FromResult(new SubtitlePayload(Path.GetExtension(candidate.Key).TrimStart('.'), output));
+        return Task.FromResult(new SubtitlePayload(Path.GetExtension(candidate.Key!).TrimStart('.'), output));
     }
 }
 
