@@ -12,7 +12,7 @@ Este repositorio incluye:
 - manifiesto de repositorio (`manifest.json`)
 - workflow de GitHub Actions para compilar y adjuntar el ZIP a un release
 
-No pude compilar el binario en este entorno porque no hay SDK de .NET instalado. El workflow de GitHub Actions quedó alineado con .NET 9, que es lo que requieren los paquetes Jellyfin 10.11.3 usados por este proyecto.
+No pude compilar el binario en este entorno porque no hay SDK de .NET instalado. El workflow de GitHub Actions quedó alineado con .NET 9, que es lo que requieren los paquetes Jellyfin 10.11.6 usados por este proyecto.
 
 ## Funcionalidad implementada
 
@@ -41,8 +41,8 @@ En Jellyfin > Plugins > Subdivx:
 
 1. Subí este repo a GitHub.
 2. Ajustá `manifest.json` y `manifest.template.json` si cambias usuario, repo o versión.
-3. Creá un tag, por ejemplo `v0.1.0.11`.
-4. GitHub Actions va a compilar y adjuntar `Jellyfin.Plugin.Subdivx-v0.1.0.11.zip` al release.
+3. Creá un tag, por ejemplo `v0.1.0.13`.
+4. GitHub Actions va a compilar y adjuntar `Jellyfin.Plugin.Subdivx-v0.1.0.13.zip` al release.
 5. Configurá GitHub Pages para servir desde la rama `gh-pages` y carpeta `/ (root)`.
 6. El workflow publica automáticamente un `manifest.json` final con checksum correcto en `gh-pages`.
 7. En Jellyfin agregá esa URL en **Dashboard > Plugins > Repositories**.

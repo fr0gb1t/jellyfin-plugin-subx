@@ -5,17 +5,17 @@
     <RootNamespace>Jellyfin.Plugin.Subdivx</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <Version>0.1.0.11</Version>
+    <Version>0.1.0.13</Version>
     <Authors>Federico Blaiotta</Authors>
     <Description>Subdivx subtitle provider plugin for Jellyfin.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jellyfin.Common" Version="10.11.3" />
-    <PackageReference Include="Jellyfin.Controller" Version="10.11.3">
+    <PackageReference Include="Jellyfin.Common" Version="10.11.6" />
+    <PackageReference Include="Jellyfin.Controller" Version="10.11.6">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Jellyfin.Model" Version="10.11.3">
+    <PackageReference Include="Jellyfin.Model" Version="10.11.6">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="SharpCompress" Version="0.38.0" />
