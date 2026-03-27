@@ -5,7 +5,7 @@
     <RootNamespace>Jellyfin.Plugin.SubX</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <Version>0.1.0.21</Version>
+    <Version>0.1.0.22</Version>
     <Authors>Federico Blaiotta</Authors>
     <Description>SubX subtitle provider plugin for Jellyfin.</Description>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
