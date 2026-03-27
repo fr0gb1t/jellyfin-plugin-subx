@@ -14,6 +14,7 @@ namespace Jellyfin.Plugin.SubX.Services;
 
 public sealed class SubXClient
 {
+    private static readonly TimeSpan SearchRetryDelay = TimeSpan.FromSeconds(5);
     private static readonly Regex VersionRegex = new(@"(?:index-min\.js|sdx-min\.css)\?v=([0-9.]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex HtmlTagRegex = new("<[^>]+>", RegexOptions.Compiled);
     private static readonly string[] SubtitleExtensions = [".srt", ".ass", ".ssa", ".sub"];
@@ -41,8 +42,9 @@ public sealed class SubXClient
 
         List<SubXItem>? items = null;
         string? selectedQuery = null;
-        foreach (var query in queryCandidates)
+        for (var index = 0; index < queryCandidates.Count; index++)
         {
+            var query = queryCandidates[index];
             using var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["tabla"] = "resultados",
@@ -67,6 +69,19 @@ public sealed class SubXClient
                 items = payload!.Items;
                 selectedQuery = query;
                 break;
+            }
+
+            if (index < queryCandidates.Count - 1)
+            {
+                if (config.EnableDebugLogging)
+                {
+                    _logger.LogInformation(
+                        "SubX direct search yielded no results for '{Query}'. Waiting {DelaySeconds} second(s) before the next attempt.",
+                        query,
+                        SearchRetryDelay.TotalSeconds);
+                }
+
+                await Task.Delay(SearchRetryDelay, cancellationToken).ConfigureAwait(false);
             }
         }
 

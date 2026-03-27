@@ -5,15 +5,16 @@
     "name": "SubX",
     "description": "Search and download Spanish subtitles from Subdivx for Jellyfin.",
     "owner": "fr0gb1t",
+    "imageUrl": "https://fr0gb1t.github.io/jellyfin-plugin-subx/thumb.png",
     "overview": "Adds a SubX subtitle provider to Jellyfin.",
     "versions": [
       {
-        "version": "0.1.0.23",
+        "version": "0.1.0.24",
         "targetAbi": "10.11.6.0",
-        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.23/Jellyfin.Plugin.SubX-v0.1.0.23.zip",
+        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.24/Jellyfin.Plugin.SubX-v0.1.0.24.zip",
         "checksum": "",
-        "timestamp": "2026-03-27 18:18:23",
-        "changelog": "Improve SubX series search reliability and add plugin artwork"
+        "timestamp": "2026-03-27 18:30:44",
+        "changelog": "Add search pacing to reduce Cloudflare blocks and publish plugin artwork"
       }
     ]
   }

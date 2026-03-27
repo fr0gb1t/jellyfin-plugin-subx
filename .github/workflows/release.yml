@@ -47,12 +47,14 @@ jobs:
           data[0]["versions"][0]["checksum"] = os.environ["CHECKSUM"]
           output.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
           PY
+          cp Jellyfin.Plugin.SubX/thumb.png artifacts/repository/thumb.png
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:
           files: |
             Jellyfin.Plugin.SubX-${{ github.ref_name }}.zip
             artifacts/repository/manifest.json
+            artifacts/repository/thumb.png
       - name: Publish manifest to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
