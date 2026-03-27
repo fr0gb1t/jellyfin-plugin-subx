@@ -1,8 +1,8 @@
 (function () {
     const pluginId = 'de3ffde6-649f-4bd2-8dc2-b761c1ab97af';
 
-    function byId(id) {
-        return document.getElementById(id);
+    function byId(page, id) {
+        return page.querySelector('#' + id);
     }
 
     document.addEventListener('pageshow', async function (event) {
@@ -11,26 +11,44 @@
             return;
         }
 
-        const config = await ApiClient.getPluginConfiguration(pluginId);
-        byId('CookieHeader').value = config.CookieHeader || '';
-        byId('UserAgent').value = config.UserAgent || '';
-        byId('OnlySpanish').checked = config.OnlySpanish !== false;
-        byId('EnableDebugLogging').checked = !!config.EnableDebugLogging;
+        Dashboard.showLoadingMsg();
+
+        try {
+            const config = await ApiClient.getPluginConfiguration(pluginId);
+            byId(page, 'CookieHeader').value = config.CookieHeader || '';
+            byId(page, 'UserAgent').value = config.UserAgent || '';
+            byId(page, 'OnlySpanish').checked = config.OnlySpanish !== false;
+            byId(page, 'EnableDebugLogging').checked = !!config.EnableDebugLogging;
+        } catch (error) {
+            Dashboard.processErrorResponse(error);
+        } finally {
+            Dashboard.hideLoadingMsg();
+        }
     });
 
     document.addEventListener('submit', async function (event) {
-        if (event.target.id !== 'SubXConfigForm') {
+        const form = event.target;
+        if (form.id !== 'SubXConfigForm') {
             return;
         }
 
         event.preventDefault();
-        const config = await ApiClient.getPluginConfiguration(pluginId);
-        config.CookieHeader = byId('CookieHeader').value;
-        config.UserAgent = byId('UserAgent').value;
-        config.OnlySpanish = byId('OnlySpanish').checked;
-        config.EnableDebugLogging = byId('EnableDebugLogging').checked;
+        const page = form.closest('#SubXConfigPage');
+        Dashboard.showLoadingMsg();
 
-        await ApiClient.updatePluginConfiguration(pluginId, config);
-        Dashboard.processPluginConfigurationUpdateResult();
+        try {
+            const config = await ApiClient.getPluginConfiguration(pluginId);
+            config.CookieHeader = byId(page, 'CookieHeader').value;
+            config.UserAgent = byId(page, 'UserAgent').value;
+            config.OnlySpanish = byId(page, 'OnlySpanish').checked;
+            config.EnableDebugLogging = byId(page, 'EnableDebugLogging').checked;
+
+            const result = await ApiClient.updatePluginConfiguration(pluginId, config);
+            Dashboard.processPluginConfigurationUpdateResult(result);
+        } catch (error) {
+            Dashboard.processErrorResponse(error);
+        } finally {
+            Dashboard.hideLoadingMsg();
+        }
     });
 })();

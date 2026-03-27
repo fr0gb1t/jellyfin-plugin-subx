@@ -8,12 +8,12 @@
     "overview": "Adds a SubX subtitle provider to Jellyfin.",
     "versions": [
       {
-        "version": "0.1.0.20",
+        "version": "0.1.0.21",
         "targetAbi": "10.11.6.0",
-        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.20/Jellyfin.Plugin.SubX-v0.1.0.20.zip",
+        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.21/Jellyfin.Plugin.SubX-v0.1.0.21.zip",
         "checksum": "",
         "timestamp": "2026-03-27 00:00:00",
-        "changelog": "Restore net9 build for Jellyfin 10.11.6 while keeping packaging fixes"
+        "changelog": "Show clearer loading and save feedback on the SubX configuration page"
       }
     ]
   }
