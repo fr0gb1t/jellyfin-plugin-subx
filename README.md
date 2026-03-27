@@ -35,8 +35,8 @@ En Jellyfin > Plugins > SubX:
 
 1. Subí este repo a GitHub.
 2. Ajustá `manifest.json` y `manifest.template.json` si cambias usuario, repo o versión.
-3. Creá un tag, por ejemplo `v0.1.0.28`.
-4. GitHub Actions va a compilar y adjuntar `Jellyfin.Plugin.SubX-v0.1.0.28.zip` al release.
+3. Creá un tag, por ejemplo `v0.1.0.29`.
+4. GitHub Actions va a compilar y adjuntar `Jellyfin.Plugin.SubX-v0.1.0.29.zip` al release.
 5. Configurá GitHub Pages para servir desde la rama `gh-pages` y carpeta `/ (root)`.
 6. El workflow publica automáticamente un `manifest.json` final con checksum correcto en `gh-pages`.
 7. En Jellyfin agregá esa URL en **Dashboard > Plugins > Repositories**.

@@ -13,6 +13,7 @@ export default function (view) {
         ApiClient.getPluginConfiguration(SubXConfig.pluginUniqueId).then(function (config) {
             byId(view, 'CookieHeader').value = config.CookieHeader || '';
             byId(view, 'UserAgent').value = config.UserAgent || '';
+            byId(view, 'SearchDelaySeconds').value = Number.isInteger(config.SearchDelaySeconds) ? config.SearchDelaySeconds : 5;
             byId(view, 'OnlySpanish').checked = config.OnlySpanish !== false;
             byId(view, 'EnableDebugLogging').checked = !!config.EnableDebugLogging;
             Dashboard.hideLoadingMsg();
@@ -29,6 +30,7 @@ export default function (view) {
         ApiClient.getPluginConfiguration(SubXConfig.pluginUniqueId).then(function (config) {
             config.CookieHeader = byId(view, 'CookieHeader').value.trim();
             config.UserAgent = byId(view, 'UserAgent').value.trim();
+            config.SearchDelaySeconds = Math.max(0, Math.min(30, parseInt(byId(view, 'SearchDelaySeconds').value || '5', 10) || 0));
             config.OnlySpanish = !!byId(view, 'OnlySpanish').checked;
             config.EnableDebugLogging = !!byId(view, 'EnableDebugLogging').checked;
 

@@ -14,7 +14,6 @@ namespace Jellyfin.Plugin.SubX.Services;
 
 public sealed class SubXClient
 {
-    private static readonly TimeSpan SearchRetryDelay = TimeSpan.FromSeconds(5);
     private static readonly Regex VersionRegex = new(@"(?:index-min\.js|sdx-min\.css)\?v=([0-9.]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex HtmlTagRegex = new("<[^>]+>", RegexOptions.Compiled);
     private static readonly Regex ExactSeasonEpisodeRegex = new(@"s(?<season>\d{1,2})[\W_]*e(?<episode>\d{1,3})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -83,10 +82,10 @@ public sealed class SubXClient
                     _logger.LogInformation(
                         "SubX direct search yielded no results for '{Query}'. Waiting {DelaySeconds} second(s) before the next attempt.",
                         query,
-                        SearchRetryDelay.TotalSeconds);
+                        GetSearchRetryDelay(config).TotalSeconds);
                 }
 
-                await Task.Delay(SearchRetryDelay, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(GetSearchRetryDelay(config), cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -157,6 +156,12 @@ public sealed class SubXClient
     private static string BuildCookieHeader(PluginConfiguration config)
     {
         return config.CookieHeader.Trim();
+    }
+
+    private static TimeSpan GetSearchRetryDelay(PluginConfiguration config)
+    {
+        var seconds = Math.Clamp(config.SearchDelaySeconds, 0, 30);
+        return TimeSpan.FromSeconds(seconds);
     }
 
     private async Task<string> GetVersionSuffixAsync(HttpClient httpClient, CancellationToken cancellationToken)

@@ -140,6 +140,7 @@ public sealed class SubXSubtitleProvider : ISubtitleProvider
         {
             queries.Add($"{seriesName} S{seasonNumber:00}E{episodeNumber:00}");
             queries.Add($"{seriesName} {seasonNumber}x{episodeNumber:00}");
+            queries.Add($"{seriesName} S{seasonNumber:00}");
             queries.Add(seriesName);
         }
 

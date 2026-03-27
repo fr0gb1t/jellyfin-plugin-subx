@@ -18,12 +18,29 @@
             <input id="UserAgent" type="text" />
           </div>
 
+          <div class="inputContainer">
+            <label class="inputLabel inputLabelUnfocused" for="SearchDelaySeconds">Rate limit between search attempts</label>
+            <input id="SearchDelaySeconds" type="number" min="0" max="30" step="1" />
+            <div class="fieldDescription">Segundos de espera entre una query y la siguiente cuando SubX prueba variantes alternativas. Usá 5 si Cloudflare te bloquea seguido.</div>
+          </div>
+
           <div class="checkboxContainer">
             <label><input type="checkbox" id="OnlySpanish" /> Only return Spanish subtitles</label>
           </div>
 
           <div class="checkboxContainer">
             <label><input type="checkbox" id="EnableDebugLogging" /> Enable debug logging</label>
+          </div>
+
+          <div class="inputContainer">
+            <div class="fieldDescription">
+              Cómo sacar los headers desde el navegador:
+              1. Abrí <a href="https://subdivx.com/" target="_blank" rel="noreferrer">subdivx.com</a> y confirmá que la búsqueda funcione en tu navegador.
+              2. Abrí las DevTools con `F12` y andá a la pestaña `Network`.
+              3. Hacé una búsqueda en Subdivx y abrí un request a `ajax.php` o a la página principal.
+              4. Copiá el valor del header `Cookie` completo y pegalo en `CookieHeader`.
+              5. Copiá también el `User-Agent` real del request y pegalo en `User-Agent`.
+            </div>
           </div>
 
           <div>
