@@ -2,13 +2,13 @@ using System.Text.Json.Serialization;
 
 namespace Jellyfin.Plugin.SubX.Models;
 
-public sealed class SubdivxSearchResponse
+public sealed class SubXSearchResponse
 {
     [JsonPropertyName("aaData")]
-    public List<SubdivxItem> Items { get; set; } = new();
+    public List<SubXItem> Items { get; set; } = new();
 }
 
-public sealed class SubdivxItem
+public sealed class SubXItem
 {
     [JsonPropertyName("id")]
     public long Id { get; set; }
@@ -39,31 +39,4 @@ public sealed class TokenResponse
 {
     [JsonPropertyName("token")]
     public string? Token { get; set; }
-}
-
-public sealed class BridgeSearchResponse
-{
-    [JsonPropertyName("results")]
-    public List<BridgeSubtitleResult> Results { get; set; } = new();
-}
-
-public sealed class BridgeSubtitleResult
-{
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
-
-    [JsonPropertyName("title")]
-    public string Title { get; set; } = string.Empty;
-
-    [JsonPropertyName("comment")]
-    public string? Comment { get; set; }
-
-    [JsonPropertyName("downloadCount")]
-    public int DownloadCount { get; set; }
-
-    [JsonPropertyName("author")]
-    public string? Author { get; set; }
-
-    [JsonPropertyName("format")]
-    public string? Format { get; set; }
 }

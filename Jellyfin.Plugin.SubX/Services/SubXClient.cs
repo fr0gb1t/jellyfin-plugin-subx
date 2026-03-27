@@ -41,7 +41,7 @@ public sealed class SubXClient
             return Array.Empty<RemoteSubtitleInfo>();
         }
 
-        List<SubdivxItem>? items = null;
+        List<SubXItem>? items = null;
         string? selectedQuery = null;
         foreach (var query in queries)
         {
@@ -56,7 +56,7 @@ public sealed class SubXClient
             using var response = await _httpClient.PostAsync("https://subdivx.com/inc/ajax.php", content, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            var payload = await JsonSerializer.DeserializeAsync<SubdivxSearchResponse>(stream, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            var payload = await JsonSerializer.DeserializeAsync<SubXSearchResponse>(stream, _jsonOptions, cancellationToken).ConfigureAwait(false);
             var count = payload?.Items?.Count ?? 0;
 
             if (config.EnableDebugLogging)
@@ -102,7 +102,7 @@ public sealed class SubXClient
     {
         ConfigureDefaultHeaders(config);
 
-        var subtitleId = ParseSubdivxProviderId(providerId);
+        var subtitleId = ParseSubXProviderId(providerId);
         using var response = await _httpClient.GetAsync($"https://subdivx.com/descargar.php?f=1&id={subtitleId}", cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
@@ -216,7 +216,7 @@ public sealed class SubXClient
         return Regex.Replace(query, @"\s+", " ").Trim();
     }
 
-    private static int ScoreItem(SubdivxItem item, SubtitleSearchRequest request, string query)
+    private static int ScoreItem(SubXItem item, SubtitleSearchRequest request, string query)
     {
         var haystack = $"{item.Title} {item.Description}".ToLowerInvariant();
         var score = 0;
@@ -247,7 +247,7 @@ public sealed class SubXClient
         return score;
     }
 
-    private static RemoteSubtitleInfo ToRemoteSubtitleInfo(SubdivxItem item)
+    private static RemoteSubtitleInfo ToRemoteSubtitleInfo(SubXItem item)
     {
         var uploaded = DateTimeOffset.TryParse(item.UploadedAt, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed)
             ? parsed
@@ -285,7 +285,7 @@ public sealed class SubXClient
         return HtmlTagRegex.Replace(value, string.Empty);
     }
 
-    private static long ParseSubdivxProviderId(string providerId)
+    private static long ParseSubXProviderId(string providerId)
     {
         var parts = providerId.Split('|', StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length != 2 || !long.TryParse(parts[1], out var id))
