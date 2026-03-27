@@ -9,12 +9,12 @@
     "overview": "Adds a SubX subtitle provider to Jellyfin.",
     "versions": [
       {
-        "version": "0.1.0.25",
+        "version": "0.1.0.26",
         "targetAbi": "10.11.6.0",
-        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.25/Jellyfin.Plugin.SubX-v0.1.0.25.zip",
+        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.26/Jellyfin.Plugin.SubX-v0.1.0.26.zip",
         "checksum": "",
-        "timestamp": "2026-03-27 18:51:21",
-        "changelog": "Improve archive extraction by selecting the best subtitle entry on download"
+        "timestamp": "2026-03-27 18:56:25",
+        "changelog": "Fix archive entry selection build error"
       }
     ]
   }
