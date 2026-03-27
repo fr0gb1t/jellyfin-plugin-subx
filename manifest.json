@@ -9,12 +9,12 @@
     "overview": "Adds a SubX subtitle provider to Jellyfin.",
     "versions": [
       {
-        "version": "0.1.0.28",
+        "version": "0.1.0.29",
         "targetAbi": "10.11.6.0",
-        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.28/Jellyfin.Plugin.SubX-v0.1.0.28.zip",
-        "checksum": "8A8DF2D36903E41F55FD8827159320B0",
-        "timestamp": "2026-03-27 19:54:02",
-        "changelog": "Improve bracketed episode matching for subtitle files inside multi-entry archives"
+        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.29/Jellyfin.Plugin.SubX-v0.1.0.29.zip",
+        "checksum": "44B01E18DA029DB910C2B6B874281310",
+        "timestamp": "2026-03-27 20:17:51",
+        "changelog": "Add season-level fallback queries, configurable search delay, and header setup help in the plugin UI"
       }
     ]
   }
