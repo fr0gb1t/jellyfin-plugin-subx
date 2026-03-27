@@ -20,6 +20,7 @@ public sealed class SubXClient
     private static readonly Regex ExactSeasonEpisodeRegex = new(@"s(?<season>\d{1,2})[\W_]*e(?<episode>\d{1,3})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex XSeasonEpisodeRegex = new(@"(?<season>\d{1,2})x(?<episode>\d{1,3})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex EpisodeRangeRegex = new(@"(?:s(?<season>\d{1,2})[\W_]*)?e?(?<start>\d{1,3})\s*[-_]\s*e?(?<end>\d{1,3})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex EpisodeMarkerRegex = new(@"(?:^|[\s._\-/])(?:cap(?:itulo)?|episode|episodio|ep|e)?[\s._-]*(?<episode>\d{1,3})(?:$|[\s._\-/])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly string[] SubtitleExtensions = [".srt", ".ass", ".ssa", ".sub"];
 
     private readonly ILogger _logger;
@@ -407,6 +408,7 @@ public sealed class SubXClient
     private static int ScoreArchiveEntry(string path, ArchiveSelection selection)
     {
         var normalizedPath = NormalizeArchivePath(path);
+        var fileName = Path.GetFileNameWithoutExtension(normalizedPath);
         var score = 0;
 
         if (selection.Season.HasValue && selection.Episode.HasValue)
@@ -430,6 +432,34 @@ public sealed class SubXClient
                 || normalizedPath.Contains($"cap{selection.Episode.Value:00}", StringComparison.Ordinal))
             {
                 score += 120;
+            }
+
+            var exactEpisodeMatches = GetEpisodeNumberMatches(fileName).ToList();
+            if (exactEpisodeMatches.Contains(selection.Episode.Value))
+            {
+                score += 400;
+            }
+
+            foreach (var matchedEpisode in exactEpisodeMatches)
+            {
+                if (matchedEpisode == selection.Episode.Value)
+                {
+                    continue;
+                }
+
+                var distance = Math.Abs(matchedEpisode - selection.Episode.Value);
+                if (distance == 1)
+                {
+                    score -= 450;
+                }
+                else if (distance <= 3)
+                {
+                    score -= 250;
+                }
+                else
+                {
+                    score -= 120;
+                }
             }
         }
 
@@ -503,6 +533,17 @@ public sealed class SubXClient
         }
 
         return false;
+    }
+
+    private static IEnumerable<int> GetEpisodeNumberMatches(string fileName)
+    {
+        foreach (Match match in EpisodeMarkerRegex.Matches(fileName))
+        {
+            if (int.TryParse(match.Groups["episode"].Value, CultureInfo.InvariantCulture, out var episode))
+            {
+                yield return episode;
+            }
+        }
     }
 
     private static bool TryParseSeasonEpisode(Match match, out int season, out int episode)
