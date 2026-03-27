@@ -507,6 +507,9 @@ public sealed class SubXClient
 
     private static bool TryParseSeasonEpisode(Match match, out int season, out int episode)
     {
+        season = 0;
+        episode = 0;
+
         return int.TryParse(match.Groups["season"].Value, CultureInfo.InvariantCulture, out season)
             && int.TryParse(match.Groups["episode"].Value, CultureInfo.InvariantCulture, out episode);
     }
