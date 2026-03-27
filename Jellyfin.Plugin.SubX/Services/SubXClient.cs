@@ -26,22 +26,22 @@ public sealed class SubXClient
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<RemoteSubtitleInfo>> SearchDirectAsync(PluginConfiguration config, SubtitleSearchRequest request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<RemoteSubtitleInfo>> SearchDirectAsync(PluginConfiguration config, SubtitleSearchRequest request, IReadOnlyList<string>? queries, CancellationToken cancellationToken)
     {
         using var httpClient = CreateHttpClient(config);
 
         var versionSuffix = await GetVersionSuffixAsync(httpClient, cancellationToken).ConfigureAwait(false);
         var token = await GetTokenAsync(httpClient, cancellationToken).ConfigureAwait(false);
         var searchField = $"buscar{versionSuffix}";
-        var queries = BuildQueries(request);
-        if (queries.Count == 0)
+        var queryCandidates = queries?.Count > 0 ? queries : BuildDefaultQueries(request);
+        if (queryCandidates.Count == 0)
         {
             return Array.Empty<RemoteSubtitleInfo>();
         }
 
         List<SubXItem>? items = null;
         string? selectedQuery = null;
-        foreach (var query in queries)
+        foreach (var query in queryCandidates)
         {
             using var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
@@ -169,7 +169,7 @@ public sealed class SubXClient
         return token.Token;
     }
 
-    private static List<string> BuildQueries(SubtitleSearchRequest request)
+    public static List<string> BuildDefaultQueries(SubtitleSearchRequest request)
     {
         var queries = new List<string>();
 

@@ -5,8 +5,8 @@
     <RootNamespace>Jellyfin.Plugin.SubX</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <Version>0.1.0.22</Version>
-    <Authors>Federico Blaiotta</Authors>
+    <Version>0.1.0.23</Version>
+    <Authors>fr0gb1t</Authors>
     <Description>SubX subtitle provider plugin for Jellyfin.</Description>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <PublishTrimmed>false</PublishTrimmed>
@@ -31,5 +31,11 @@
   <ItemGroup>
     <EmbeddedResource Include="Configuration\configPage.html" />
     <EmbeddedResource Include="Configuration\configPage.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="thumb.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
