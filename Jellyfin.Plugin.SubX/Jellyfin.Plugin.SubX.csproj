@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <AssemblyName>Jellyfin.Plugin.SubX</AssemblyName>
     <RootNamespace>Jellyfin.Plugin.SubX</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <Version>0.1.0.19</Version>
+    <Version>0.1.0.20</Version>
     <Authors>Federico Blaiotta</Authors>
     <Description>SubX subtitle provider plugin for Jellyfin.</Description>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -23,6 +23,9 @@
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="SharpCompress" Version="0.38.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.3">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
