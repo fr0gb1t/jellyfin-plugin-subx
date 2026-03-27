@@ -21,6 +21,7 @@ public sealed class SubXClient
     private static readonly Regex XSeasonEpisodeRegex = new(@"(?<season>\d{1,2})x(?<episode>\d{1,3})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex EpisodeRangeRegex = new(@"(?:s(?<season>\d{1,2})[\W_]*)?e?(?<start>\d{1,3})\s*[-_]\s*e?(?<end>\d{1,3})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex EpisodeMarkerRegex = new(@"(?:^|[\s._\-/])(?:cap(?:itulo)?|episode|episodio|ep|e)?[\s._-]*(?<episode>\d{1,3})(?:$|[\s._\-/])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex BracketEpisodeRegex = new(@"\[(?<episode>\d{1,3})\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly string[] SubtitleExtensions = [".srt", ".ass", ".ssa", ".sub"];
 
     private readonly ILogger _logger;
@@ -434,10 +435,10 @@ public sealed class SubXClient
                 score += 120;
             }
 
-            var exactEpisodeMatches = GetEpisodeNumberMatches(fileName).ToList();
+            var exactEpisodeMatches = GetEpisodeNumberMatches(fileName).Distinct().ToList();
             if (exactEpisodeMatches.Contains(selection.Episode.Value))
             {
-                score += 400;
+                score += 600;
             }
 
             foreach (var matchedEpisode in exactEpisodeMatches)
@@ -450,15 +451,15 @@ public sealed class SubXClient
                 var distance = Math.Abs(matchedEpisode - selection.Episode.Value);
                 if (distance == 1)
                 {
-                    score -= 450;
+                    score -= 700;
                 }
                 else if (distance <= 3)
                 {
-                    score -= 250;
+                    score -= 400;
                 }
                 else
                 {
-                    score -= 120;
+                    score -= 220;
                 }
             }
         }
@@ -537,6 +538,14 @@ public sealed class SubXClient
 
     private static IEnumerable<int> GetEpisodeNumberMatches(string fileName)
     {
+        foreach (Match match in BracketEpisodeRegex.Matches(fileName))
+        {
+            if (int.TryParse(match.Groups["episode"].Value, CultureInfo.InvariantCulture, out var episode))
+            {
+                yield return episode;
+            }
+        }
+
         foreach (Match match in EpisodeMarkerRegex.Matches(fileName))
         {
             if (int.TryParse(match.Groups["episode"].Value, CultureInfo.InvariantCulture, out var episode))
