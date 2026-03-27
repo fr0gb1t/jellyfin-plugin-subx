@@ -11,12 +11,10 @@ namespace Jellyfin.Plugin.SubX;
 public sealed class SubXSubtitleProvider : ISubtitleProvider
 {
     private readonly ILogger<SubXSubtitleProvider> _logger;
-    private readonly IHttpClientFactory _httpClientFactory;
 
-    public SubXSubtitleProvider(ILogger<SubXSubtitleProvider> logger, IHttpClientFactory httpClientFactory)
+    public SubXSubtitleProvider(ILogger<SubXSubtitleProvider> logger)
     {
         _logger = logger;
-        _httpClientFactory = httpClientFactory;
     }
 
     public string Name => "SubX";
@@ -27,7 +25,7 @@ public sealed class SubXSubtitleProvider : ISubtitleProvider
     {
         ArgumentNullException.ThrowIfNull(request);
         var config = Plugin.Instance?.Configuration ?? new PluginConfiguration();
-        var client = new SubXClient(_httpClientFactory.CreateClient(nameof(SubXSubtitleProvider)), _logger);
+        var client = new SubXClient(_logger);
 
         if (config.EnableDebugLogging)
         {
@@ -79,7 +77,7 @@ public sealed class SubXSubtitleProvider : ISubtitleProvider
         }
 
         var config = Plugin.Instance?.Configuration ?? new PluginConfiguration();
-        var client = new SubXClient(_httpClientFactory.CreateClient(nameof(SubXSubtitleProvider)), _logger);
+        var client = new SubXClient(_logger);
         var payload = await client.DownloadDirectAsync(config, id, cancellationToken).ConfigureAwait(false);
 
         payload.Stream.Position = 0;

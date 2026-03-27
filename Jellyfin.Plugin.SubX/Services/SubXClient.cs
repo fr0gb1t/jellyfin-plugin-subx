@@ -18,22 +18,20 @@ public sealed class SubXClient
     private static readonly Regex HtmlTagRegex = new("<[^>]+>", RegexOptions.Compiled);
     private static readonly string[] SubtitleExtensions = [".srt", ".ass", ".ssa", ".sub"];
 
-    private readonly HttpClient _httpClient;
     private readonly ILogger _logger;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
-    public SubXClient(HttpClient httpClient, ILogger logger)
+    public SubXClient(ILogger logger)
     {
-        _httpClient = httpClient;
         _logger = logger;
     }
 
     public async Task<IReadOnlyList<RemoteSubtitleInfo>> SearchDirectAsync(PluginConfiguration config, SubtitleSearchRequest request, CancellationToken cancellationToken)
     {
-        ConfigureDefaultHeaders(config);
+        using var httpClient = CreateHttpClient(config);
 
-        var versionSuffix = await GetVersionSuffixAsync(cancellationToken).ConfigureAwait(false);
-        var token = await GetTokenAsync(cancellationToken).ConfigureAwait(false);
+        var versionSuffix = await GetVersionSuffixAsync(httpClient, cancellationToken).ConfigureAwait(false);
+        var token = await GetTokenAsync(httpClient, cancellationToken).ConfigureAwait(false);
         var searchField = $"buscar{versionSuffix}";
         var queries = BuildQueries(request);
         if (queries.Count == 0)
@@ -53,7 +51,7 @@ public sealed class SubXClient
                 ["token"] = token
             });
 
-            using var response = await _httpClient.PostAsync("https://subdivx.com/inc/ajax.php", content, cancellationToken).ConfigureAwait(false);
+            using var response = await httpClient.PostAsync("https://subdivx.com/inc/ajax.php", content, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             var payload = await JsonSerializer.DeserializeAsync<SubXSearchResponse>(stream, _jsonOptions, cancellationToken).ConfigureAwait(false);
@@ -100,10 +98,10 @@ public sealed class SubXClient
 
     public async Task<SubtitlePayload> DownloadDirectAsync(PluginConfiguration config, string providerId, CancellationToken cancellationToken)
     {
-        ConfigureDefaultHeaders(config);
+        using var httpClient = CreateHttpClient(config);
 
         var subtitleId = ParseSubXProviderId(providerId);
-        using var response = await _httpClient.GetAsync($"https://subdivx.com/descargar.php?f=1&id={subtitleId}", cancellationToken).ConfigureAwait(false);
+        using var response = await httpClient.GetAsync($"https://subdivx.com/descargar.php?f=1&id={subtitleId}", cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
         var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
@@ -112,23 +110,28 @@ public sealed class SubXClient
         return await ExtractSubtitleAsync(bytes, mediaType, fileName).ConfigureAwait(false);
     }
 
-    private void ConfigureDefaultHeaders(PluginConfiguration config)
+    private static HttpClient CreateHttpClient(PluginConfiguration config)
     {
-        _httpClient.DefaultRequestHeaders.Clear();
-        _httpClient.DefaultRequestHeaders.Accept.Clear();
-        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/javascript"));
-        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*", 0.1));
-        _httpClient.DefaultRequestHeaders.Referrer = new Uri("https://subdivx.com/");
-        _httpClient.DefaultRequestHeaders.Add("Origin", "https://subdivx.com");
-        _httpClient.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(config.UserAgent);
+        var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(60)
+        };
+        httpClient.DefaultRequestHeaders.Accept.Clear();
+        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/javascript"));
+        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*", 0.1));
+        httpClient.DefaultRequestHeaders.Referrer = new Uri("https://subdivx.com/");
+        httpClient.DefaultRequestHeaders.Add("Origin", "https://subdivx.com");
+        httpClient.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(config.UserAgent);
 
         var cookieHeader = BuildCookieHeader(config);
         if (!string.IsNullOrWhiteSpace(cookieHeader))
         {
-            _httpClient.DefaultRequestHeaders.Add("Cookie", cookieHeader);
+            httpClient.DefaultRequestHeaders.Add("Cookie", cookieHeader);
         }
+
+        return httpClient;
     }
 
     private static string BuildCookieHeader(PluginConfiguration config)
@@ -136,9 +139,9 @@ public sealed class SubXClient
         return config.CookieHeader.Trim();
     }
 
-    private async Task<string> GetVersionSuffixAsync(CancellationToken cancellationToken)
+    private async Task<string> GetVersionSuffixAsync(HttpClient httpClient, CancellationToken cancellationToken)
     {
-        var html = await _httpClient.GetStringAsync("https://subdivx.com/", cancellationToken).ConfigureAwait(false);
+        var html = await httpClient.GetStringAsync("https://subdivx.com/", cancellationToken).ConfigureAwait(false);
         var match = VersionRegex.Match(html);
         if (!match.Success)
         {
@@ -154,9 +157,9 @@ public sealed class SubXClient
         throw new InvalidOperationException("Subdivx frontend version was empty.");
     }
 
-    private async Task<string> GetTokenAsync(CancellationToken cancellationToken)
+    private async Task<string> GetTokenAsync(HttpClient httpClient, CancellationToken cancellationToken)
     {
-        await using var stream = await _httpClient.GetStreamAsync("https://subdivx.com/inc/gt.php?gt=1", cancellationToken).ConfigureAwait(false);
+        await using var stream = await httpClient.GetStreamAsync("https://subdivx.com/inc/gt.php?gt=1", cancellationToken).ConfigureAwait(false);
         var token = await JsonSerializer.DeserializeAsync<TokenResponse>(stream, _jsonOptions, cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(token?.Token))
         {

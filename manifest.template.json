@@ -8,12 +8,12 @@
     "overview": "Adds a SubX subtitle provider to Jellyfin.",
     "versions": [
       {
-        "version": "0.1.0.18",
+        "version": "0.1.0.19",
         "targetAbi": "10.11.6.0",
-        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.18/Jellyfin.Plugin.SubX-v0.1.0.18.zip",
+        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.19/Jellyfin.Plugin.SubX-v0.1.0.19.zip",
         "checksum": "",
         "timestamp": "2026-03-27 00:00:00",
-        "changelog": "Target .NET 8 and align package references with Jellyfin 10.11.6"
+        "changelog": "Remove HttpClientFactory dependency and align plugin loading with working local plugin structure"
       }
     ]
   }
