@@ -21,19 +21,19 @@ jobs:
         with:
           dotnet-version: 9.0.x
       - name: Restore
-        run: dotnet restore Jellyfin.Plugin.Subdivx.sln
+        run: dotnet restore Jellyfin.Plugin.SubX/Jellyfin.Plugin.SubX.csproj
       - name: Publish
-        run: dotnet publish Jellyfin.Plugin.Subdivx/Jellyfin.Plugin.Subdivx.csproj -c Release -o artifacts/publish
+        run: dotnet publish Jellyfin.Plugin.SubX/Jellyfin.Plugin.SubX.csproj -c Release -o artifacts/publish
       - name: Prepare package
         run: |
-          mkdir -p artifacts/package/Jellyfin.Plugin.Subdivx
-          cp -R artifacts/publish/* artifacts/package/Jellyfin.Plugin.Subdivx/
+          mkdir -p artifacts/package/Jellyfin.Plugin.SubX
+          cp -R artifacts/publish/* artifacts/package/Jellyfin.Plugin.SubX/
           cd artifacts/package
-          zip -r ../../Jellyfin.Plugin.Subdivx-${GITHUB_REF_NAME}.zip Jellyfin.Plugin.Subdivx
+          zip -r ../../Jellyfin.Plugin.SubX-${GITHUB_REF_NAME}.zip Jellyfin.Plugin.SubX
       - name: Generate repository manifest
         run: |
           mkdir -p artifacts/repository
-          CHECKSUM=$(md5sum Jellyfin.Plugin.Subdivx-${GITHUB_REF_NAME}.zip | awk '{print toupper($1)}')
+          CHECKSUM=$(md5sum Jellyfin.Plugin.SubX-${GITHUB_REF_NAME}.zip | awk '{print toupper($1)}')
           export CHECKSUM
           python3 - <<'PY'
           import json
@@ -51,7 +51,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            Jellyfin.Plugin.Subdivx-${{ github.ref_name }}.zip
+            Jellyfin.Plugin.SubX-${{ github.ref_name }}.zip
             artifacts/repository/manifest.json
       - name: Publish manifest to gh-pages
         uses: peaceiris/actions-gh-pages@v4

@@ -4,23 +4,23 @@ using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Subtitles;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Jellyfin.Plugin.Subdivx;
+namespace Jellyfin.Plugin.SubX;
 
 public sealed class PluginServiceRegistrator : IPluginServiceRegistrator
 {
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        serviceCollection.AddHttpClient(nameof(SubdivxSubtitleProvider), client =>
+        serviceCollection.AddHttpClient(nameof(SubXSubtitleProvider), client =>
         {
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(
                 applicationHost.Name.Replace(' ', '_'),
                 applicationHost.ApplicationVersionString));
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(
-                "Jellyfin-Plugin-Subdivx",
+                "Jellyfin-Plugin-SubX",
                 typeof(PluginServiceRegistrator).Assembly.GetName().Version?.ToString() ?? "0.0.0.0"));
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
         });
 
-        serviceCollection.AddSingleton<ISubtitleProvider, SubdivxSubtitleProvider>();
+        serviceCollection.AddSingleton<ISubtitleProvider, SubXSubtitleProvider>();
     }
 }

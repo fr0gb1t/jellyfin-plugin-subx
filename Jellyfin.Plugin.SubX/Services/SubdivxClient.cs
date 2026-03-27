@@ -1,19 +1,18 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Jellyfin.Plugin.Subdivx.Configuration;
-using Jellyfin.Plugin.Subdivx.Models;
+using Jellyfin.Plugin.SubX.Configuration;
+using Jellyfin.Plugin.SubX.Models;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 using SharpCompress.Archives;
 
-namespace Jellyfin.Plugin.Subdivx.Services;
+namespace Jellyfin.Plugin.SubX.Services;
 
-public sealed class SubdivxClient
+public sealed class SubXClient
 {
     private static readonly Regex VersionRegex = new(@"(?:index-min\.js|sdx-min\.css)\?v=([0-9.]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex HtmlTagRegex = new("<[^>]+>", RegexOptions.Compiled);
@@ -23,7 +22,7 @@ public sealed class SubdivxClient
     private readonly ILogger _logger;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
-    public SubdivxClient(HttpClient httpClient, ILogger logger)
+    public SubXClient(HttpClient httpClient, ILogger logger)
     {
         _httpClient = httpClient;
         _logger = logger;
@@ -62,7 +61,7 @@ public sealed class SubdivxClient
 
             if (config.EnableDebugLogging)
             {
-                _logger.LogInformation("Subdivx direct search '{Query}' returned {Count} results.", query, count);
+                _logger.LogInformation("SubX direct search '{Query}' returned {Count} results.", query, count);
             }
 
             if (count > 0)
@@ -77,7 +76,7 @@ public sealed class SubdivxClient
         {
             if (config.EnableDebugLogging)
             {
-                _logger.LogInformation("Subdivx direct search produced no results for any query candidate.");
+                _logger.LogInformation("SubX direct search produced no results for any query candidate.");
             }
 
             return Array.Empty<RemoteSubtitleInfo>();
@@ -85,7 +84,7 @@ public sealed class SubdivxClient
 
         if (config.EnableDebugLogging)
         {
-            _logger.LogInformation("Subdivx direct search selected query '{Query}' for ranking.", selectedQuery);
+            _logger.LogInformation("SubX direct search selected query '{Query}' for ranking.", selectedQuery);
         }
 
         var ranked = items
@@ -113,80 +112,6 @@ public sealed class SubdivxClient
         return await ExtractSubtitleAsync(bytes, mediaType, fileName).ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyList<RemoteSubtitleInfo>> SearchBridgeAsync(PluginConfiguration config, SubtitleSearchRequest request, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(config.BridgeBaseUrl))
-        {
-            return Array.Empty<RemoteSubtitleInfo>();
-        }
-
-        var endpoint = config.BridgeBaseUrl.TrimEnd('/') + "/search";
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
-        {
-            Content = JsonContent.Create(new
-            {
-                contentType = request.ContentType.ToString(),
-                name = request.Name,
-                seriesName = request.SeriesName,
-                seasonNumber = request.ParentIndexNumber,
-                episodeNumber = request.IndexNumber,
-                year = request.ProductionYear,
-                mediaPath = request.MediaPath,
-                language = request.Language,
-                twoLetterLanguage = request.TwoLetterISOLanguageName
-            })
-        };
-
-        if (!string.IsNullOrWhiteSpace(config.BridgeApiKey))
-        {
-            httpRequest.Headers.Add("X-Api-Key", config.BridgeApiKey);
-        }
-
-        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        var payload = await JsonSerializer.DeserializeAsync<BridgeSearchResponse>(stream, _jsonOptions, cancellationToken).ConfigureAwait(false);
-        if (payload?.Results is null)
-        {
-            return Array.Empty<RemoteSubtitleInfo>();
-        }
-
-        return payload.Results.Select(x => new RemoteSubtitleInfo
-        {
-            Id = $"bridge|{x.Id}",
-            Name = x.Title,
-            Author = x.Author,
-            Comment = x.Comment,
-            DownloadCount = x.DownloadCount,
-            ProviderName = "Subdivx",
-            ThreeLetterISOLanguageName = "spa",
-            Format = string.IsNullOrWhiteSpace(x.Format) ? "srt" : x.Format,
-            DateCreated = DateTime.UtcNow
-        }).ToList();
-    }
-
-    public async Task<SubtitlePayload> DownloadBridgeAsync(PluginConfiguration config, string providerId, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(config.BridgeBaseUrl))
-        {
-            throw new InvalidOperationException("BridgeBaseUrl is empty.");
-        }
-
-        var bridgeId = providerId["bridge|".Length..];
-        var endpoint = config.BridgeBaseUrl.TrimEnd('/') + "/download/" + Uri.EscapeDataString(bridgeId);
-        using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
-        if (!string.IsNullOrWhiteSpace(config.BridgeApiKey))
-        {
-            request.Headers.Add("X-Api-Key", config.BridgeApiKey);
-        }
-
-        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName;
-        return await ExtractSubtitleAsync(bytes, response.Content.Headers.ContentType?.MediaType, fileName).ConfigureAwait(false);
-    }
-
     private void ConfigureDefaultHeaders(PluginConfiguration config)
     {
         _httpClient.DefaultRequestHeaders.Clear();
@@ -208,23 +133,7 @@ public sealed class SubdivxClient
 
     private static string BuildCookieHeader(PluginConfiguration config)
     {
-        if (!string.IsNullOrWhiteSpace(config.CookieHeader))
-        {
-            return config.CookieHeader.Trim();
-        }
-
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(config.CfClearance))
-        {
-            parts.Add($"cf_clearance={config.CfClearance.Trim()}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(config.SdxCookie))
-        {
-            parts.Add($"sdx={config.SdxCookie.Trim()}");
-        }
-
-        return string.Join("; ", parts);
+        return config.CookieHeader.Trim();
     }
 
     private async Task<string> GetVersionSuffixAsync(CancellationToken cancellationToken)
@@ -347,12 +256,12 @@ public sealed class SubdivxClient
         var format = string.IsNullOrWhiteSpace(item.Format) ? "srt" : item.Format!.Trim().ToLowerInvariant();
         return new RemoteSubtitleInfo
         {
-            Id = $"subdivx|{item.Id}",
-            Name = item.Title ?? $"Subdivx #{item.Id}",
+            Id = $"subx|{item.Id}",
+            Name = item.Title ?? $"SubX #{item.Id}",
             Author = item.Uploader,
             Comment = StripHtml(item.Description),
             DownloadCount = item.DownloadCount,
-            ProviderName = "Subdivx",
+            ProviderName = "SubX",
             ThreeLetterISOLanguageName = "spa",
             Format = format,
             DateCreated = uploaded.UtcDateTime
@@ -381,7 +290,7 @@ public sealed class SubdivxClient
         var parts = providerId.Split('|', StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length != 2 || !long.TryParse(parts[1], out var id))
         {
-            throw new FormatException($"Invalid Subdivx provider id: {providerId}");
+            throw new FormatException($"Invalid SubX provider id: {providerId}");
         }
 
         return id;

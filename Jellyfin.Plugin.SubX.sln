@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jellyfin.Plugin.Subdivx", "Jellyfin.Plugin.Subdivx/Jellyfin.Plugin.Subdivx.csproj", "{A4B7732E-87E6-4A2D-B11C-5155638A7B47}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jellyfin.Plugin.SubX", "Jellyfin.Plugin.SubX/Jellyfin.Plugin.SubX.csproj", "{A4B7732E-87E6-4A2D-B11C-5155638A7B47}"
 EndProject
 Global
     GlobalSection(SolutionConfigurationPlatforms) = preSolution

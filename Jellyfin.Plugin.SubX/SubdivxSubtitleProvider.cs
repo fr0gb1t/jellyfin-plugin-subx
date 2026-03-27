@@ -1,25 +1,25 @@
-using Jellyfin.Plugin.Subdivx.Configuration;
-using Jellyfin.Plugin.Subdivx.Services;
+using Jellyfin.Plugin.SubX.Configuration;
+using Jellyfin.Plugin.SubX.Services;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.Subdivx;
+namespace Jellyfin.Plugin.SubX;
 
-public sealed class SubdivxSubtitleProvider : ISubtitleProvider
+public sealed class SubXSubtitleProvider : ISubtitleProvider
 {
-    private readonly ILogger<SubdivxSubtitleProvider> _logger;
+    private readonly ILogger<SubXSubtitleProvider> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
 
-    public SubdivxSubtitleProvider(ILogger<SubdivxSubtitleProvider> logger, IHttpClientFactory httpClientFactory)
+    public SubXSubtitleProvider(ILogger<SubXSubtitleProvider> logger, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
         _httpClientFactory = httpClientFactory;
     }
 
-    public string Name => "Subdivx";
+    public string Name => "SubX";
 
     public IEnumerable<VideoContentType> SupportedMediaTypes => new[] { VideoContentType.Movie, VideoContentType.Episode };
 
@@ -27,12 +27,12 @@ public sealed class SubdivxSubtitleProvider : ISubtitleProvider
     {
         ArgumentNullException.ThrowIfNull(request);
         var config = Plugin.Instance?.Configuration ?? new PluginConfiguration();
-        var client = new SubdivxClient(_httpClientFactory.CreateClient(nameof(SubdivxSubtitleProvider)), _logger);
+        var client = new SubXClient(_httpClientFactory.CreateClient(nameof(SubXSubtitleProvider)), _logger);
 
         if (config.EnableDebugLogging)
         {
             _logger.LogInformation(
-                "Subdivx provider search started. Name='{Name}', Series='{Series}', Year={Year}, Season={Season}, Episode={Episode}, Language='{Language}', TwoLetter='{TwoLetter}', MediaPath='{MediaPath}'",
+                "SubX provider search started. Name='{Name}', Series='{Series}', Year={Year}, Season={Season}, Episode={Episode}, Language='{Language}', TwoLetter='{TwoLetter}', MediaPath='{MediaPath}'",
                 request.Name,
                 request.SeriesName,
                 request.ProductionYear,
@@ -45,19 +45,11 @@ public sealed class SubdivxSubtitleProvider : ISubtitleProvider
 
         try
         {
-            IReadOnlyList<RemoteSubtitleInfo> results;
-            if (config.UseBridge)
-            {
-                results = await client.SearchBridgeAsync(config, request, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                results = await client.SearchDirectAsync(config, request, cancellationToken).ConfigureAwait(false);
-            }
+            var results = await client.SearchDirectAsync(config, request, cancellationToken).ConfigureAwait(false);
 
             if (config.EnableDebugLogging)
             {
-                _logger.LogInformation("Subdivx provider search finished with {Count} result(s).", results.Count);
+                _logger.LogInformation("SubX provider search finished with {Count} result(s).", results.Count);
             }
 
             return results;
@@ -66,7 +58,7 @@ public sealed class SubdivxSubtitleProvider : ISubtitleProvider
         {
             _logger.LogWarning(
                 ex,
-                "Subdivx search failed. Name='{Name}', Series='{Series}', Year={Year}, Season={Season}, Episode={Episode}, Language='{Language}', TwoLetter='{TwoLetter}', MediaPath='{MediaPath}'",
+                "SubX search failed. Name='{Name}', Series='{Series}', Year={Year}, Season={Season}, Episode={Episode}, Language='{Language}', TwoLetter='{TwoLetter}', MediaPath='{MediaPath}'",
                 request.Name,
                 request.SeriesName,
                 request.ProductionYear,
@@ -87,17 +79,8 @@ public sealed class SubdivxSubtitleProvider : ISubtitleProvider
         }
 
         var config = Plugin.Instance?.Configuration ?? new PluginConfiguration();
-        var client = new SubdivxClient(_httpClientFactory.CreateClient(nameof(SubdivxSubtitleProvider)), _logger);
-
-        SubtitlePayload payload;
-        if (id.StartsWith("bridge|", StringComparison.Ordinal))
-        {
-            payload = await client.DownloadBridgeAsync(config, id, cancellationToken).ConfigureAwait(false);
-        }
-        else
-        {
-            payload = await client.DownloadDirectAsync(config, id, cancellationToken).ConfigureAwait(false);
-        }
+        var client = new SubXClient(_httpClientFactory.CreateClient(nameof(SubXSubtitleProvider)), _logger);
+        var payload = await client.DownloadDirectAsync(config, id, cancellationToken).ConfigureAwait(false);
 
         payload.Stream.Position = 0;
         return new SubtitleResponse

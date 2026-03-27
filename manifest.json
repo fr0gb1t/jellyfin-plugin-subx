@@ -1,16 +1,16 @@
 [
   {
     "category": "Metadata",
-    "guid": "6d3e5d26-3fa8-4b35-8fc7-e9dbe06a4001",
-    "name": "Subdivx",
+    "guid": "de3ffde6-649f-4bd2-8dc2-b761c1ab97af",
+    "name": "SubX",
     "description": "Search and download Spanish subtitles from Subdivx for Jellyfin.",
     "owner": "fr0gb1t",
-    "overview": "Adds a Subdivx subtitle provider to Jellyfin.",
+    "overview": "Adds a SubX subtitle provider to Jellyfin.",
     "versions": [
       {
         "version": "0.1.0.13",
         "targetAbi": "10.11.6.0",
-        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subdivx/releases/download/v0.1.0.13/Jellyfin.Plugin.Subdivx-v0.1.0.13.zip",
+        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.13/Jellyfin.Plugin.SubX-v0.1.0.13.zip",
         "checksum": "",
         "timestamp": "2026-03-26 00:00:00",
         "changelog": "Target Jellyfin 10.11.6 exactly and restore explicit subtitle provider registration"

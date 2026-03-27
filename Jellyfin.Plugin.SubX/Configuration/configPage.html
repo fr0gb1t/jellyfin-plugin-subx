@@ -1,0 +1,40 @@
+<div id="SubXConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
+  <div data-role="content">
+    <div class="content-primary">
+      <form id="SubXConfigForm">
+        <div class="verticalSection verticalSection-extrabottompadding">
+          <div class="sectionTitleContainer flex align-items-center">
+            <h2 class="sectionTitle">SubX</h2>
+          </div>
+
+          <div class="inputContainer">
+            <label class="inputLabel inputLabelUnfocused" for="CookieHeader">Cookie header</label>
+            <textarea id="CookieHeader" rows="4"></textarea>
+            <div class="fieldDescription">Pegá la cabecera Cookie completa del request que funciona en Subdivx. Ejemplo: cf_clearance=...; sdx=...</div>
+          </div>
+
+          <div class="inputContainer">
+            <label class="inputLabel inputLabelUnfocused" for="UserAgent">User-Agent</label>
+            <input id="UserAgent" type="text" />
+          </div>
+
+          <div class="checkboxContainer">
+            <label><input type="checkbox" id="OnlySpanish" /> Only return Spanish subtitles</label>
+          </div>
+
+          <div class="checkboxContainer">
+            <label><input type="checkbox" id="EnableDebugLogging" /> Enable debug logging</label>
+          </div>
+
+          <div>
+            <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+              <span>Save</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="SubX.js"></script>
+</div>

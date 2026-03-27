@@ -1,4 +1,4 @@
-# Jellyfin Plugin - Subdivx
+# Jellyfin Plugin - SubX
 
 Plugin de Jellyfin para buscar y descargar subtítulos en español desde Subdivx.
 
@@ -18,21 +18,15 @@ No pude compilar el binario en este entorno porque no hay SDK de .NET instalado.
 
 - búsqueda de subtítulos para películas y episodios
 - modo directo contra Subdivx
-- modo opcional vía bridge HTTP externo
-- soporte de cookies manuales (`cf_clearance` y `sdx`)
+- soporte de `Cookie` completa y `User-Agent`
 - descarga del archivo de Subdivx y extracción de `.srt`, `.ass`, `.ssa` o `.sub`
 - logs básicos opcionales para depuración de búsquedas directas
 
 ## Configuración
 
-En Jellyfin > Plugins > Subdivx:
+En Jellyfin > Plugins > SubX:
 
-- `UseBridge`: usa un bridge HTTP externo en vez de hablar directo con Subdivx
-- `BridgeBaseUrl`: URL base del bridge
-- `BridgeApiKey`: API key opcional para el bridge
-- `CookieHeader`: alternativa para pegar la cabecera completa Cookie
-- `CfClearance`: cookie `cf_clearance`
-- `SdxCookie`: cookie `sdx`
+- `CookieHeader`: pega la cabecera `Cookie` completa del request que funciona en Subdivx
 - `UserAgent`: user-agent a reutilizar con las cookies
 - `OnlySpanish`: limita resultados a subtítulos en español
 - `EnableDebugLogging`: logs más verbosos
@@ -42,7 +36,7 @@ En Jellyfin > Plugins > Subdivx:
 1. Subí este repo a GitHub.
 2. Ajustá `manifest.json` y `manifest.template.json` si cambias usuario, repo o versión.
 3. Creá un tag, por ejemplo `v0.1.0.13`.
-4. GitHub Actions va a compilar y adjuntar `Jellyfin.Plugin.Subdivx-v0.1.0.13.zip` al release.
+4. GitHub Actions va a compilar y adjuntar `Jellyfin.Plugin.SubX-v0.1.0.13.zip` al release.
 5. Configurá GitHub Pages para servir desde la rama `gh-pages` y carpeta `/ (root)`.
 6. El workflow publica automáticamente un `manifest.json` final con checksum correcto en `gh-pages`.
 7. En Jellyfin agregá esa URL en **Dashboard > Plugins > Repositories**.
@@ -50,7 +44,6 @@ En Jellyfin > Plugins > Subdivx:
 ## Notas importantes
 
 - El acceso directo a Subdivx depende de cookies válidas y puede romperse por cambios de Cloudflare o del frontend del sitio.
-- El modo bridge suele ser más robusto para uso continuo.
 - Cuando saques una nueva versión, actualizá `version`, `sourceUrl` y `timestamp` en `manifest.template.json` antes de crear el tag.
 - El `checksum` ya no hace falta cargarlo a mano: lo calcula el workflow y publica el manifest final a `gh-pages`.
 
@@ -61,9 +54,6 @@ Para probar la búsqueda fuera de Jellyfin:
 ```bash
 python3 tools/subdivx_probe.py \
   --query "Made in Abyss" \
-  --cf-clearance "TU_CF_CLEARANCE" \
-  --sdx "TU_SDX" \
+  --cookie-header "cf_clearance=...; sdx=..." \
   --user-agent "Mozilla/5.0 (X11; Linux x86_64; rv:148.0) Gecko/20100101 Firefox/148.0"
 ```
-
-También puedes usar `--cookie-header` en lugar de `--cf-clearance` y `--sdx`.

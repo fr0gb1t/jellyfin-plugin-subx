@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Jellyfin.Plugin.Subdivx.Models;
+namespace Jellyfin.Plugin.SubX.Models;
 
 public sealed class SubdivxSearchResponse
 {

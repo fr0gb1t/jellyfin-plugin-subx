@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <AssemblyName>Jellyfin.Plugin.Subdivx</AssemblyName>
-    <RootNamespace>Jellyfin.Plugin.Subdivx</RootNamespace>
+    <AssemblyName>Jellyfin.Plugin.SubX</AssemblyName>
+    <RootNamespace>Jellyfin.Plugin.SubX</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <Version>0.1.0.13</Version>
     <Authors>Federico Blaiotta</Authors>
-    <Description>Subdivx subtitle provider plugin for Jellyfin.</Description>
+    <Description>SubX subtitle provider plugin for Jellyfin.</Description>
   </PropertyGroup>
 
   <ItemGroup>
