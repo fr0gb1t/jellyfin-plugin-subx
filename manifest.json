@@ -9,12 +9,12 @@
     "overview": "Adds a SubX subtitle provider to Jellyfin.",
     "versions": [
       {
-        "version": "0.1.0.24",
+        "version": "0.1.0.26",
         "targetAbi": "10.11.6.0",
-        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.24/Jellyfin.Plugin.SubX-v0.1.0.24.zip",
-        "checksum": "EFAB6C0F5A8AEE7056DA31541A5D0580",
-        "timestamp": "2026-03-27 18:30:44",
-        "changelog": "Add search pacing to reduce Cloudflare blocks and publish plugin artwork"
+        "sourceUrl": "https://github.com/fr0gb1t/jellyfin-plugin-subx/releases/download/v0.1.0.26/Jellyfin.Plugin.SubX-v0.1.0.26.zip",
+        "checksum": "CD831199F4B4B11A92B15D33287DB5F5",
+        "timestamp": "2026-03-27 18:56:25",
+        "changelog": "Fix archive entry selection build error"
       }
     ]
   }
