@@ -17,6 +17,9 @@ public sealed class SubXClient
     private static readonly TimeSpan SearchRetryDelay = TimeSpan.FromSeconds(5);
     private static readonly Regex VersionRegex = new(@"(?:index-min\.js|sdx-min\.css)\?v=([0-9.]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex HtmlTagRegex = new("<[^>]+>", RegexOptions.Compiled);
+    private static readonly Regex ExactSeasonEpisodeRegex = new(@"s(?<season>\d{1,2})[\W_]*e(?<episode>\d{1,3})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex XSeasonEpisodeRegex = new(@"(?<season>\d{1,2})x(?<episode>\d{1,3})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex EpisodeRangeRegex = new(@"(?:s(?<season>\d{1,2})[\W_]*)?e?(?<start>\d{1,3})\s*[-_]\s*e?(?<end>\d{1,3})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly string[] SubtitleExtensions = [".srt", ".ass", ".ssa", ".sub"];
 
     private readonly ILogger _logger;
@@ -105,7 +108,7 @@ public sealed class SubXClient
             .OrderByDescending(x => x.Score)
             .ThenByDescending(x => x.Item.DownloadCount)
             .Take(20)
-            .Select(x => ToRemoteSubtitleInfo(x.Item))
+            .Select(x => ToRemoteSubtitleInfo(x.Item, request))
             .ToList();
 
         return ranked;
@@ -115,14 +118,14 @@ public sealed class SubXClient
     {
         using var httpClient = CreateHttpClient(config);
 
-        var subtitleId = ParseSubXProviderId(providerId);
-        using var response = await httpClient.GetAsync($"https://subdivx.com/descargar.php?f=1&id={subtitleId}", cancellationToken).ConfigureAwait(false);
+        var selection = ParseSubXProviderId(providerId);
+        using var response = await httpClient.GetAsync($"https://subdivx.com/descargar.php?f=1&id={selection.SubtitleId}", cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
         var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
         var mediaType = response.Content.Headers.ContentType?.MediaType;
         var fileName = response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName;
-        return await ExtractSubtitleAsync(bytes, mediaType, fileName).ConfigureAwait(false);
+        return await ExtractSubtitleAsync(bytes, mediaType, fileName, selection).ConfigureAwait(false);
     }
 
     private static HttpClient CreateHttpClient(PluginConfiguration config)
@@ -265,7 +268,7 @@ public sealed class SubXClient
         return score;
     }
 
-    private static RemoteSubtitleInfo ToRemoteSubtitleInfo(SubXItem item)
+    private static RemoteSubtitleInfo ToRemoteSubtitleInfo(SubXItem item, SubtitleSearchRequest request)
     {
         var uploaded = DateTimeOffset.TryParse(item.UploadedAt, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed)
             ? parsed
@@ -274,7 +277,7 @@ public sealed class SubXClient
         var format = string.IsNullOrWhiteSpace(item.Format) ? "srt" : item.Format!.Trim().ToLowerInvariant();
         return new RemoteSubtitleInfo
         {
-            Id = $"subx|{item.Id}",
+            Id = BuildProviderId(item.Id, request),
             Name = item.Title ?? $"SubX #{item.Id}",
             Author = item.Uploader,
             Comment = StripHtml(item.Description),
@@ -303,18 +306,38 @@ public sealed class SubXClient
         return HtmlTagRegex.Replace(value, string.Empty);
     }
 
-    private static long ParseSubXProviderId(string providerId)
+    private static string BuildProviderId(long subtitleId, SubtitleSearchRequest request)
+    {
+        if (request.ParentIndexNumber.HasValue && request.IndexNumber.HasValue)
+        {
+            return $"subx|{subtitleId}|{request.ParentIndexNumber.Value:00}|{request.IndexNumber.Value:00}";
+        }
+
+        return $"subx|{subtitleId}";
+    }
+
+    private static ArchiveSelection ParseSubXProviderId(string providerId)
     {
         var parts = providerId.Split('|', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 2 || !long.TryParse(parts[1], out var id))
+        if (parts.Length is < 2 or > 4 || !long.TryParse(parts[1], out var id))
         {
             throw new FormatException($"Invalid SubX provider id: {providerId}");
         }
 
-        return id;
+        int? season = null;
+        int? episode = null;
+        if (parts.Length == 4
+            && int.TryParse(parts[2], CultureInfo.InvariantCulture, out var parsedSeason)
+            && int.TryParse(parts[3], CultureInfo.InvariantCulture, out var parsedEpisode))
+        {
+            season = parsedSeason;
+            episode = parsedEpisode;
+        }
+
+        return new ArchiveSelection(id, season, episode);
     }
 
-    private static async Task<SubtitlePayload> ExtractSubtitleAsync(byte[] bytes, string? mediaType, string? fileName)
+    private static async Task<SubtitlePayload> ExtractSubtitleAsync(byte[] bytes, string? mediaType, string? fileName, ArchiveSelection selection)
     {
         var normalizedName = (fileName ?? string.Empty).Trim('"');
         var extension = Path.GetExtension(normalizedName).ToLowerInvariant();
@@ -325,20 +348,23 @@ public sealed class SubXClient
 
         if (extension == ".zip" || string.Equals(mediaType, "application/zip", StringComparison.OrdinalIgnoreCase))
         {
-            return ExtractFromZip(bytes);
+            return ExtractFromZip(bytes, selection);
         }
 
-        return await ExtractFromArchiveAsync(bytes).ConfigureAwait(false);
+        return await ExtractFromArchiveAsync(bytes, selection).ConfigureAwait(false);
     }
 
-    private static SubtitlePayload ExtractFromZip(byte[] bytes)
+    private static SubtitlePayload ExtractFromZip(byte[] bytes, ArchiveSelection selection)
     {
         using var memory = new MemoryStream(bytes);
         using var archive = new ZipArchive(memory, ZipArchiveMode.Read, leaveOpen: false);
         var entry = archive.Entries
             .Where(x => SubtitleExtensions.Contains(Path.GetExtension(x.FullName).ToLowerInvariant()))
-            .OrderBy(x => SubtitleExtensions.ToList().IndexOf(Path.GetExtension(x.FullName).ToLowerInvariant()))
-            .ThenByDescending(x => x.Length)
+            .Select(x => new { Entry = x, Score = ScoreArchiveEntry(x.FullName, selection) })
+            .OrderByDescending(x => x.Score)
+            .ThenBy(x => SubtitleExtensions.ToList().IndexOf(Path.GetExtension(x.Entry.FullName).ToLowerInvariant()))
+            .ThenByDescending(x => x.Entry.Length)
+            .Select(x => x.Entry)
             .FirstOrDefault();
 
         if (entry is null)
@@ -353,14 +379,17 @@ public sealed class SubXClient
         return new SubtitlePayload(Path.GetExtension(entry.FullName).TrimStart('.'), output);
     }
 
-    private static Task<SubtitlePayload> ExtractFromArchiveAsync(byte[] bytes)
+    private static Task<SubtitlePayload> ExtractFromArchiveAsync(byte[] bytes, ArchiveSelection selection)
     {
         using var memory = new MemoryStream(bytes);
         using var archive = ArchiveFactory.Open(memory);
         var candidate = archive.Entries
             .Where(x => !x.IsDirectory && !string.IsNullOrWhiteSpace(x.Key) && SubtitleExtensions.Contains(Path.GetExtension(x.Key).ToLowerInvariant()))
-            .OrderBy(x => SubtitleExtensions.ToList().IndexOf(Path.GetExtension(x.Key!).ToLowerInvariant()))
-            .ThenByDescending(x => x.Size)
+            .Select(x => new { Entry = x, Score = ScoreArchiveEntry(x.Key!, selection) })
+            .OrderByDescending(x => x.Score)
+            .ThenBy(x => SubtitleExtensions.ToList().IndexOf(Path.GetExtension(x.Entry.Key!).ToLowerInvariant()))
+            .ThenByDescending(x => x.Entry.Size)
+            .Select(x => x.Entry)
             .FirstOrDefault();
 
         if (candidate is null)
@@ -374,6 +403,114 @@ public sealed class SubXClient
         output.Position = 0;
         return Task.FromResult(new SubtitlePayload(Path.GetExtension(candidate.Key!).TrimStart('.'), output));
     }
+
+    private static int ScoreArchiveEntry(string path, ArchiveSelection selection)
+    {
+        var normalizedPath = NormalizeArchivePath(path);
+        var score = 0;
+
+        if (selection.Season.HasValue && selection.Episode.HasValue)
+        {
+            if (ContainsExactEpisode(normalizedPath, selection.Season.Value, selection.Episode.Value))
+            {
+                score += 1000;
+            }
+
+            if (ContainsEpisodeRange(normalizedPath, selection.Season.Value, selection.Episode.Value))
+            {
+                score += 700;
+            }
+
+            if (normalizedPath.Contains($"e{selection.Episode.Value:00}", StringComparison.Ordinal))
+            {
+                score += 150;
+            }
+
+            if (normalizedPath.Contains($"cap {selection.Episode.Value:00}", StringComparison.Ordinal)
+                || normalizedPath.Contains($"cap{selection.Episode.Value:00}", StringComparison.Ordinal))
+            {
+                score += 120;
+            }
+        }
+
+        if (normalizedPath.Contains("forced", StringComparison.Ordinal))
+        {
+            score -= 100;
+        }
+
+        if (normalizedPath.Contains("sign", StringComparison.Ordinal)
+            || normalizedPath.Contains("songs", StringComparison.Ordinal))
+        {
+            score -= 50;
+        }
+
+        return score;
+    }
+
+    private static string NormalizeArchivePath(string path)
+    {
+        return path
+            .Replace('\\', '/')
+            .ToLowerInvariant();
+    }
+
+    private static bool ContainsExactEpisode(string path, int season, int episode)
+    {
+        foreach (Match match in ExactSeasonEpisodeRegex.Matches(path))
+        {
+            if (TryParseSeasonEpisode(match, out var parsedSeason, out var parsedEpisode)
+                && parsedSeason == season
+                && parsedEpisode == episode)
+            {
+                return true;
+            }
+        }
+
+        foreach (Match match in XSeasonEpisodeRegex.Matches(path))
+        {
+            if (TryParseSeasonEpisode(match, out var parsedSeason, out var parsedEpisode)
+                && parsedSeason == season
+                && parsedEpisode == episode)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsEpisodeRange(string path, int season, int episode)
+    {
+        foreach (Match match in EpisodeRangeRegex.Matches(path))
+        {
+            var hasSeason = int.TryParse(match.Groups["season"].Value, CultureInfo.InvariantCulture, out var parsedSeason);
+            var hasStart = int.TryParse(match.Groups["start"].Value, CultureInfo.InvariantCulture, out var start);
+            var hasEnd = int.TryParse(match.Groups["end"].Value, CultureInfo.InvariantCulture, out var end);
+            if (!hasStart || !hasEnd)
+            {
+                continue;
+            }
+
+            if (hasSeason && parsedSeason != season)
+            {
+                continue;
+            }
+
+            if (episode >= Math.Min(start, end) && episode <= Math.Max(start, end))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryParseSeasonEpisode(Match match, out int season, out int episode)
+    {
+        return int.TryParse(match.Groups["season"].Value, CultureInfo.InvariantCulture, out season)
+            && int.TryParse(match.Groups["episode"].Value, CultureInfo.InvariantCulture, out episode);
+    }
 }
 
 public sealed record SubtitlePayload(string Format, MemoryStream Stream);
+public sealed record ArchiveSelection(long SubtitleId, int? Season, int? Episode);
